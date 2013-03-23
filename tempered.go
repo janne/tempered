@@ -28,7 +28,7 @@ type Sensing struct {
 	RelHum float32
 }
 
-func (d Device) Sense() (s Sensing, err error) {
+func (d *Device) Sense() (s Sensing, err error) {
 	if C.tempered_read_sensors(d.handle) {
 		count := int(C.tempered_get_sensor_count(d.handle))
 		for sensor := 0; sensor < count; sensor++ {

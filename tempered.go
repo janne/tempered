@@ -62,7 +62,7 @@ func (d Device) Sense() (s Sensing, err error) {
 	return
 }
 
-func NewTempered() (t *Tempered, err error) {
+func New() (t *Tempered, err error) {
 	var error *C.char
 	t = &Tempered{}
 	if !C.tempered_init(&error) {

@@ -10,6 +10,10 @@ import (
 import "C"
 import "unsafe"
 
+type Tempered struct {
+	Devices []Device
+}
+
 type Device struct {
 	VendorId        uint16
 	ProductId       uint16
@@ -19,47 +23,9 @@ type Device struct {
 	handle          *C.tempered_device
 }
 
-type Tempered struct {
-	Devices []Device
-}
-
 type Sensing struct {
-	TempC float32
+	TempC  float32
 	RelHum float32
-}
-
-func (d *Device) Sense() (s Sensing, err error) {
-	if C.tempered_read_sensors(d.handle) {
-		count := int(C.tempered_get_sensor_count(d.handle))
-		for sensor := 0; sensor < count; sensor++ {
-			typ := int(C.tempered_get_sensor_type(d.handle, C.int(sensor)))
-			if typ == C.TEMPERED_SENSOR_TYPE_NONE {
-				err = fmt.Errorf("No such sensor, or type is not supported.\n")
-				return
-			}
-			if (typ & C.TEMPERED_SENSOR_TYPE_TEMPERATURE) > 0 {
-				var TempC C.float
-				if C.tempered_get_temperature(d.handle, C.int(sensor), &TempC) {
-					s.TempC = float32(TempC)
-				} else {
-					err = fmt.Errorf("Temperature failed: %s\n", C.GoString(C.tempered_error(d.handle)))
-				}
-			}
-
-			if (typ & C.TEMPERED_SENSOR_TYPE_HUMIDITY) > 0 {
-				var RelHum C.float
-				if C.tempered_get_humidity(d.handle, C.int(sensor), &RelHum) {
-					s.RelHum = float32(RelHum)
-				} else {
-					err = fmt.Errorf("Humidity failed: %s\n", C.GoString(C.tempered_error(d.handle)))
-				}
-			}
-		}
-	} else {
-		err = fmt.Errorf("Failed to read the sensors: %s\n",
-			C.GoString(C.tempered_error(d.handle)))
-	}
-	return
 }
 
 func New() (t *Tempered, err error) {
@@ -108,6 +74,40 @@ func (t *Tempered) Close() (err error) {
 	if !C.tempered_exit(&error) {
 		err = fmt.Errorf(C.GoString(error))
 		C.free(unsafe.Pointer(error))
+	}
+	return
+}
+
+func (d *Device) Sense() (s Sensing, err error) {
+	if C.tempered_read_sensors(d.handle) {
+		count := int(C.tempered_get_sensor_count(d.handle))
+		for sensor := 0; sensor < count; sensor++ {
+			typ := int(C.tempered_get_sensor_type(d.handle, C.int(sensor)))
+			if typ == C.TEMPERED_SENSOR_TYPE_NONE {
+				err = fmt.Errorf("No such sensor, or type is not supported.\n")
+				return
+			}
+			if (typ & C.TEMPERED_SENSOR_TYPE_TEMPERATURE) > 0 {
+				var TempC C.float
+				if C.tempered_get_temperature(d.handle, C.int(sensor), &TempC) {
+					s.TempC = float32(TempC)
+				} else {
+					err = fmt.Errorf("Temperature failed: %s\n", C.GoString(C.tempered_error(d.handle)))
+				}
+			}
+
+			if (typ & C.TEMPERED_SENSOR_TYPE_HUMIDITY) > 0 {
+				var RelHum C.float
+				if C.tempered_get_humidity(d.handle, C.int(sensor), &RelHum) {
+					s.RelHum = float32(RelHum)
+				} else {
+					err = fmt.Errorf("Humidity failed: %s\n", C.GoString(C.tempered_error(d.handle)))
+				}
+			}
+		}
+	} else {
+		err = fmt.Errorf("Failed to read the sensors: %s\n",
+			C.GoString(C.tempered_error(d.handle)))
 	}
 	return
 }

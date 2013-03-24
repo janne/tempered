@@ -1,3 +1,5 @@
+// Package tempered wraps TEMPered by edorfaus for reading the TEMPer family of
+// thermometer and hygrometer devices.
 package tempered
 
 import (
@@ -14,6 +16,7 @@ type Tempered struct {
 	Devices []Device
 }
 
+// Device describes a TEMPer USB device.
 type Device struct {
 	VendorId        uint16
 	ProductId       uint16
@@ -23,11 +26,13 @@ type Device struct {
 	handle          *C.tempered_device
 }
 
+// Sensing describes a single sensor reading.
 type Sensing struct {
 	TempC  float32
 	RelHum float32
 }
 
+// New initiates the communication and opens up all available TEMPer interfaces.
 func New() (t *Tempered, err error) {
 	var error *C.char
 	t = &Tempered{}
@@ -65,6 +70,7 @@ func New() (t *Tempered, err error) {
 	return
 }
 
+// Close closes all opened devices and the TEMPered library.
 func (t *Tempered) Close() (err error) {
 	var error *C.char
 	for _, dev := range t.Devices {
@@ -78,6 +84,7 @@ func (t *Tempered) Close() (err error) {
 	return
 }
 
+// Sense makes a reading and returns a Sensing.
 func (d *Device) Sense() (s Sensing, err error) {
 	if C.tempered_read_sensors(d.handle) {
 		count := int(C.tempered_get_sensor_count(d.handle))
